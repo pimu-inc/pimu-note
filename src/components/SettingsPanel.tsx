@@ -1,3 +1,5 @@
+import ShortcutRecorder from './ShortcutRecorder'
+import { formatAccelerator } from '../lib/accelerator'
 import type { CopyMode, ThemePreference } from '../lib/settings'
 
 type Props = {
@@ -7,6 +9,10 @@ type Props = {
   onChangeCopyMode: (mode: CopyMode) => void
   theme: ThemePreference
   onChangeTheme: (theme: ThemePreference) => void
+  shortcut: string
+  onChangeShortcut: (accelerator: string) => void
+  onResetShortcut: () => void
+  shortcutError: string | null
   onClose: () => void
 }
 
@@ -17,6 +23,10 @@ export default function SettingsPanel({
   onChangeCopyMode,
   theme,
   onChangeTheme,
+  shortcut,
+  onChangeShortcut,
+  onResetShortcut,
+  shortcutError,
   onClose,
 }: Props) {
   return (
@@ -103,9 +113,22 @@ export default function SettingsPanel({
         </section>
 
         <section className="settings-section">
-          <h3>ショートカット</h3>
+          <h3>呼び出しのホットキー</h3>
+          <ShortcutRecorder
+            value={shortcut}
+            onRecord={onChangeShortcut}
+            onReset={onResetShortcut}
+          />
+          {shortcutError ? <p className="settings-error">{shortcutError}</p> : null}
+          <p className="settings-help">
+            他のアプリを使っているときでも、このキーで pimu-note を呼び出せます。
+          </p>
+        </section>
+
+        <section className="settings-section">
+          <h3>そのほかのショートカット</h3>
           <dl className="settings-keys">
-            <dt>⌘⌥N</dt>
+            <dt>{formatAccelerator(shortcut)}</dt>
             <dd>どこからでも pimu-note を呼び出す</dd>
             <dt>⌘N</dt>
             <dd>新規ノート</dd>

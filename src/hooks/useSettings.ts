@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  DEFAULT_SHORTCUT,
   getCopyMode,
   getThemePreference,
+  getToggleShortcut,
   setCopyMode as persistCopyMode,
   setThemePreference as persistTheme,
+  setToggleShortcut as persistShortcut,
   type CopyMode,
   type ThemePreference,
 } from '../lib/settings'
@@ -15,6 +18,9 @@ import {
 export function useSettings() {
   const [copyMode, setCopyModeState] = useState<CopyMode>('both')
   const [theme, setThemeState] = useState<ThemePreference>('system')
+  const [shortcut, setShortcutState] = useState(DEFAULT_SHORTCUT)
+  /** F-501b: 登録に失敗した理由を画面に出すため */
+  const [shortcutError, setShortcutError] = useState<string | null>(null)
   const [systemIsDark, setSystemIsDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
@@ -30,9 +36,25 @@ export function useSettings() {
 
   useEffect(() => {
     void (async () => {
-      const [mode, pref] = await Promise.all([getCopyMode(), getThemePreference()])
+      const [mode, pref, saved] = await Promise.all([
+        getCopyMode(),
+        getThemePreference(),
+        getToggleShortcut(),
+      ])
       setCopyModeState(mode)
       setThemeState(pref)
+      setShortcutState(saved)
+
+      // Rust 側は既定のホットキーで起動しているので、
+      // 保存されている設定が違う場合はここで登録し直す
+      if (saved !== DEFAULT_SHORTCUT) {
+        try {
+          await persistShortcut(saved)
+        } catch (e) {
+          setShortcutError(String(e))
+          setShortcutState(DEFAULT_SHORTCUT)
+        }
+      }
     })()
   }, [])
 
@@ -63,5 +85,28 @@ export function useSettings() {
 
   const getCopyModeNow = useCallback(() => copyModeRef.current, [])
 
-  return { copyMode, setCopyMode, theme, setTheme, isDark, getCopyModeNow }
+  /** F-501a / F-501b */
+  const setShortcut = useCallback(async (accelerator: string) => {
+    try {
+      await persistShortcut(accelerator)
+      setShortcutState(accelerator)
+      setShortcutError(null)
+      return true
+    } catch (e) {
+      setShortcutError(e instanceof Error ? e.message : String(e))
+      return false
+    }
+  }, [])
+
+  return {
+    copyMode,
+    setCopyMode,
+    theme,
+    setTheme,
+    isDark,
+    getCopyModeNow,
+    shortcut,
+    setShortcut,
+    shortcutError,
+  }
 }

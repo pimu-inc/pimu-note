@@ -12,12 +12,16 @@ const KEY_NOTES_DIR = 'notesDir'
 const KEY_LAST_NOTE_ID = 'lastNoteId'
 const KEY_COPY_MODE = 'copyMode'
 const KEY_THEME = 'theme'
+const KEY_SHORTCUT = 'toggleShortcut'
 
 /** F-306: ⌘C で何をクリップボードに載せるか */
 export type CopyMode = 'both' | 'plain'
 
 /** F-603: 外観。system は OS の設定に追従する */
 export type ThemePreference = 'system' | 'light' | 'dark'
+
+/** F-501: 既定のホットキー。Rust 側の DEFAULT_SHORTCUT と揃えること */
+export const DEFAULT_SHORTCUT = 'CommandOrControl+Alt+N'
 
 let storePromise: Promise<Store> | null = null
 
@@ -87,4 +91,23 @@ export async function getThemePreference(): Promise<ThemePreference> {
 export async function setThemePreference(theme: ThemePreference): Promise<void> {
   const store = await getStore()
   await store.set(KEY_THEME, theme)
+}
+
+/** F-501a: グローバルホットキー */
+export async function getToggleShortcut(): Promise<string> {
+  const store = await getStore()
+  return (await store.get<string>(KEY_SHORTCUT)) ?? DEFAULT_SHORTCUT
+}
+
+/**
+ * ホットキーを差し替える。
+ *
+ * Rust 側での登録に失敗したら（他アプリとの衝突など）例外が飛ぶので、
+ * その場合は設定を保存しない。保存してしまうと、次回起動時に
+ * 登録できないキーを復元しようとして黙って効かない状態になる。
+ */
+export async function setToggleShortcut(accelerator: string): Promise<void> {
+  await invoke('set_toggle_shortcut', { accelerator })
+  const store = await getStore()
+  await store.set(KEY_SHORTCUT, accelerator)
 }

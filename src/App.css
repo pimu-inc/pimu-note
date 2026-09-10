@@ -409,3 +409,66 @@ button.link:hover {
   color: var(--sub);
   line-height: 1.7;
 }
+
+/* ---------------- ドラッグ&ドロップ (F-405) ---------------- */
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 3px dashed var(--accent);
+  border-radius: 8px;
+}
+
+.drop-overlay p {
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+.settings-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--danger);
+}
+
+.shortcut-recorder {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shortcut-recorder .is-recording {
+  background: var(--accent);
+  color: #fff;
+}
+
+.shortcut-recorder > .ghost:first-child {
+  min-width: 96px;
+  font:
+    13px/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+
+.settings-warning {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.7;
+}

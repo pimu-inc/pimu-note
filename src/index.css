@@ -12,6 +12,8 @@
   --hover: #e8e8ec;
   --danger: #c0392b;
   --danger-bg: #fbe3e0;
+  --warning: #8a5a00;
+  --warning-bg: #fdf1d8;
 }
 
 /*
@@ -32,6 +34,8 @@
     --hover: #303035;
     --danger: #ff6b5c;
     --danger-bg: #4a2320;
+    --warning: #f5c66b;
+    --warning-bg: #40320f;
   }
 }
 
@@ -46,6 +50,8 @@
     --hover: #303035;
     --danger: #ff6b5c;
     --danger-bg: #4a2320;
+    --warning: #f5c66b;
+    --warning-bg: #40320f;
 }
 
 * {

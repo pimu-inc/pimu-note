@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { join } from '@tauri-apps/api/path'
 import {
   exists,
@@ -124,14 +125,24 @@ export async function deleteNote(path: string): Promise<void> {
   await remove(path)
 }
 
-/** F-405: 外部の `.md` を取り込む。中身をコピーして新しいノートにする */
+/**
+ * F-405: 外部の `.md` を取り込む。中身をコピーして新しいノートにする。
+ *
+ * 取り込み元は保存先フォルダの外にあり fs プラグインのスコープで扱えないため、
+ * 読み出しは Rust 側のコマンドに任せる（拡張子はそちらで検証している）。
+ */
 export async function importMarkdown(
   dir: string,
   sourcePath: string,
   existingIds: ReadonlySet<string>,
 ): Promise<Note> {
-  const content = await readTextFile(sourcePath)
+  const content = await invoke<string>('read_markdown_file', { path: sourcePath })
   const note = await createNote(dir, existingIds)
   await saveNote(note.path, content)
-  return { ...note, content, title: deriveTitle(content) }
+  return { ...note, content, title: deriveTitle(content), updatedAt: Date.now() }
+}
+
+/** F-406: ノートを任意の場所に書き出す */
+export async function exportMarkdown(destination: string, content: string): Promise<void> {
+  await invoke('write_markdown_file', { path: destination, content })
 }

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { watch } from '@tauri-apps/plugin-fs'
-import { createNote, deleteNote, deriveTitle, listNotes, saveNote, type Note } from '../lib/notes'
+import {
+  createNote,
+  deleteNote,
+  deriveTitle,
+  exportMarkdown,
+  importMarkdown,
+  listNotes,
+  saveNote,
+  type Note,
+} from '../lib/notes'
 import { getLastNoteId, getNotesDir, setLastNoteId, setNotesDir } from '../lib/settings'
 
 const SAVE_DEBOUNCE_MS = 500
@@ -326,6 +335,52 @@ export function useNotes() {
     [setError],
   )
 
+  // --- F-405: `.md` を取り込む ---
+  const importFiles = useCallback(
+    async (paths: string[]) => {
+      if (paths.length === 0) return
+      try {
+        await flushNow()
+
+        const dir = dirRef.current
+        const ids = new Set(notesRef.current.map((n) => n.id))
+        const imported: Note[] = []
+
+        for (const path of paths) {
+          // 1 件ずつ順に作る。同じ秒に複数作られてもファイル名が衝突しないよう、
+          // 作成済みの id を都度足していく
+          const note = await importMarkdown(dir, path, ids)
+          ids.add(note.id)
+          lastKnownDisk.current.set(note.path, note.content)
+          imported.push(note)
+        }
+
+        setState((s) => {
+          const rest = s.notes.filter((n) => !imported.some((i) => i.id === n.id))
+          const notes = [...imported, ...rest]
+          const selected = imported[0]
+          return { ...s, notes, selectedId: selected.id, selected, error: null }
+        })
+        void setLastNoteId(imported[0].id)
+      } catch (e) {
+        setError(e)
+      }
+    },
+    [flushNow, setError],
+  )
+
+  // --- F-406: ノートを書き出す ---
+  const exportNote = useCallback(
+    async (destination: string, content: string) => {
+      try {
+        await exportMarkdown(destination, content)
+      } catch (e) {
+        setError(e)
+      }
+    },
+    [setError],
+  )
+
   // --- F-402: 保存先フォルダの変更 ---
   const changeDir = useCallback(
     async (dir: string) => {
@@ -368,5 +423,15 @@ export function useNotes() {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [flushNow])
 
-  return { ...state, updateContent, select, create, remove, changeDir, reload }
+  return {
+    ...state,
+    updateContent,
+    select,
+    create,
+    remove,
+    changeDir,
+    reload,
+    importFiles,
+    exportNote,
+  }
 }

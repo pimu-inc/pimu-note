@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { writeHtml, writeText } from '@tauri-apps/plugin-clipboard-manager'
-import { confirm, open } from '@tauri-apps/plugin-dialog'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
+import { confirm, open, save } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
 import NoteList from './components/NoteList'
 import SettingsPanel from './components/SettingsPanel'
@@ -9,6 +10,7 @@ import { useNotes } from './hooks/useNotes'
 import { useSettings } from './hooks/useSettings'
 import { markdownToSafeHtml } from './lib/clipboard'
 import { UNTITLED } from './lib/notes'
+import { DEFAULT_SHORTCUT } from './lib/settings'
 import './App.css'
 
 export default function App() {
@@ -16,6 +18,7 @@ export default function App() {
   const settings = useSettings()
   const viewRef = useRef<EditorView | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [dropActive, setDropActive] = useState(false)
 
   const content = notes.selected?.content ?? ''
   // 保存先はレンダー時点の値をそのまま渡す。ref 経由にすると切り替え直後にずれる
@@ -35,6 +38,44 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
     // create は安定した参照なので、毎レンダーで登録し直さない
   }, [create])
+
+  // --- F-405: `.md` のドラッグ&ドロップ取り込み ---
+  const importFiles = notes.importFiles
+  useEffect(() => {
+    let unlisten: (() => void) | null = null
+    let disposed = false
+
+    void (async () => {
+      const stop = await getCurrentWebview().onDragDropEvent((event) => {
+        if (event.payload.type === 'over') {
+          setDropActive(true)
+        } else if (event.payload.type === 'leave') {
+          setDropActive(false)
+        } else if (event.payload.type === 'drop') {
+          setDropActive(false)
+          void importFiles(event.payload.paths)
+        }
+      })
+      if (disposed) stop()
+      else unlisten = stop
+    })()
+
+    return () => {
+      disposed = true
+      unlisten?.()
+    }
+  }, [importFiles])
+
+  // --- F-406: ノートを書き出す ---
+  async function handleExport() {
+    if (!notes.selected) return
+    const destination = await save({
+      title: 'ノートを書き出す',
+      defaultPath: `${notes.selected.title || UNTITLED}.md`,
+      filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
+    })
+    if (destination) await notes.exportNote(destination, content)
+  }
 
   // --- F-104: 削除前に確認する ---
   async function handleDelete(id: string) {
@@ -81,7 +122,7 @@ export default function App() {
   }
 
   return (
-    <div className="shell">
+    <div className={`shell${dropActive ? ' is-drop-active' : ''}`}>
       <NoteList
         notes={notes.notes}
         selectedId={notes.selectedId}
@@ -103,6 +144,9 @@ export default function App() {
               disabled={!notes.selected}
             >
               プレーンのみ
+            </button>
+            <button className="ghost" onClick={() => void handleExport()} disabled={!notes.selected}>
+              書き出す
             </button>
             <button className="ghost" onClick={() => setSettingsOpen(true)} title="設定">
               設定
@@ -135,6 +179,12 @@ export default function App() {
         </footer>
       </main>
 
+      {dropActive ? (
+        <div className="drop-overlay">
+          <p>Markdown ファイルをドロップすると取り込みます</p>
+        </div>
+      ) : null}
+
       {settingsOpen ? (
         <SettingsPanel
           dir={notes.dir}
@@ -143,6 +193,10 @@ export default function App() {
           onChangeCopyMode={settings.setCopyMode}
           theme={settings.theme}
           onChangeTheme={settings.setTheme}
+          shortcut={settings.shortcut}
+          onChangeShortcut={(a) => void settings.setShortcut(a)}
+          onResetShortcut={() => void settings.setShortcut(DEFAULT_SHORTCUT)}
+          shortcutError={settings.shortcutError}
           onClose={() => setSettingsOpen(false)}
         />
       ) : null}

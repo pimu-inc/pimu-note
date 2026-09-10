@@ -27,6 +27,8 @@ tauri-plugin-store = "2"
 # watch は F-404（外部でファイルが変更されたら反映する）に必要
 tauri-plugin-fs = { version = "2", features = ["watch"] }
 
-# グローバルショートカットはデスクトップ専用
+# デスクトップ専用のプラグイン
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
+# F-504: ウィンドウの位置とサイズの復元
+tauri-plugin-window-state = "2"
