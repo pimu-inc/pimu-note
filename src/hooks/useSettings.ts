@@ -3,8 +3,10 @@ import {
   DEFAULT_SHORTCUT,
   getCopyMode,
   getThemePreference,
+  getSidebarOpen,
   getToggleShortcut,
   setCopyMode as persistCopyMode,
+  setSidebarOpen as persistSidebarOpen,
   setThemePreference as persistTheme,
   setToggleShortcut as persistShortcut,
   type CopyMode,
@@ -19,6 +21,7 @@ export function useSettings() {
   const [copyMode, setCopyModeState] = useState<CopyMode>('both')
   const [theme, setThemeState] = useState<ThemePreference>('system')
   const [shortcut, setShortcutState] = useState(DEFAULT_SHORTCUT)
+  const [sidebarOpen, setSidebarOpenState] = useState(false)
   /** F-501b: 登録に失敗した理由を画面に出すため */
   const [shortcutError, setShortcutError] = useState<string | null>(null)
   const [systemIsDark, setSystemIsDark] = useState(
@@ -36,14 +39,16 @@ export function useSettings() {
 
   useEffect(() => {
     void (async () => {
-      const [mode, pref, saved] = await Promise.all([
+      const [mode, pref, saved, sidebar] = await Promise.all([
         getCopyMode(),
         getThemePreference(),
         getToggleShortcut(),
+        getSidebarOpen(),
       ])
       setCopyModeState(mode)
       setThemeState(pref)
       setShortcutState(saved)
+      setSidebarOpenState(sidebar)
 
       // Rust 側は既定のホットキーで起動しているので、
       // 保存されている設定が違う場合はここで登録し直す
@@ -85,6 +90,13 @@ export function useSettings() {
 
   const getCopyModeNow = useCallback(() => copyModeRef.current, [])
 
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpenState((open) => {
+      void persistSidebarOpen(!open)
+      return !open
+    })
+  }, [])
+
   /** F-501a / F-501b */
   const setShortcut = useCallback(async (accelerator: string) => {
     try {
@@ -108,5 +120,7 @@ export function useSettings() {
     shortcut,
     setShortcut,
     shortcutError,
+    sidebarOpen,
+    toggleSidebar,
   }
 }

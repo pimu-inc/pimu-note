@@ -13,6 +13,7 @@ const KEY_LAST_NOTE_ID = 'lastNoteId'
 const KEY_COPY_MODE = 'copyMode'
 const KEY_THEME = 'theme'
 const KEY_SHORTCUT = 'toggleShortcut'
+const KEY_SIDEBAR_OPEN = 'sidebarOpen'
 
 /** F-306: ⌘C で何をクリップボードに載せるか */
 export type CopyMode = 'both' | 'plain'
@@ -110,4 +111,20 @@ export async function setToggleShortcut(accelerator: string): Promise<void> {
   await invoke('set_toggle_shortcut', { accelerator })
   const store = await getStore()
   await store.set(KEY_SHORTCUT, accelerator)
+}
+
+/**
+ * ノート一覧を開いているか。
+ *
+ * 既定は閉じた状態。ふだんは書くことに集中し、必要なときだけ一覧を出す使い方を想定している。
+ * 開閉の状態は覚えるので、開いたままにしておくこともできる。
+ */
+export async function getSidebarOpen(): Promise<boolean> {
+  const store = await getStore()
+  return (await store.get<boolean>(KEY_SIDEBAR_OPEN)) ?? false
+}
+
+export async function setSidebarOpen(open: boolean): Promise<void> {
+  const store = await getStore()
+  await store.set(KEY_SIDEBAR_OPEN, open)
 }

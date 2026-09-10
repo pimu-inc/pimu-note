@@ -1,0 +1,120 @@
+name: リリースビルド
+
+# 要件 D-102: 手元でビルドしたものは配らない。必ず CI が作った成果物を配布する。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Apple Silicon 専用（要件 2.1）。macos-14 以降は arm64 ランナー
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Rust ツールチェーンを用意
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Rust のビルドキャッシュ
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: 依存関係をインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: 型チェックとテスト
+        run: |
+          pnpm exec tsc -b
+          pnpm exec oxlint src
+          pnpm test
+
+      - name: ビルド
+        # D-103: 証明書を持たないので ad-hoc 署名（tauri.conf.json の signingIdentity: "-"）。
+        # D-106: Developer ID に移行するときは、ここに APPLE_CERTIFICATE などの
+        # secrets を渡し、signingIdentity を差し替えるだけでよい。
+        # アプリ側のコードには手を入れない。
+        run: pnpm tauri build --target aarch64-apple-darwin
+
+      - name: 署名を確認
+        run: |
+          APP=src-tauri/target/aarch64-apple-darwin/release/bundle/macos/pimu-note.app
+          codesign --verify --verbose "$APP"
+
+      - name: チェックサムを計算
+        id: checksum
+        # D-104: 受け取った側が改ざんを検証できるようにする
+        run: |
+          DMG=$(ls src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg | head -1)
+          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(shasum -a 256 "$DMG" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$DMG")" >> "$GITHUB_OUTPUT"
+
+      - name: リリースノートを組み立てる
+        run: |
+          cat > release-notes.md <<EOF
+          ## インストール手順
+
+          1. 下の \`${{ steps.checksum.outputs.name }}\` をダウンロードする
+          2. dmg を開き、pimu-note を「アプリケーション」フォルダにドラッグする
+          3. **初回だけ** Gatekeeper に止められます。次の手順で開いてください。
+             1. アプリをダブルクリックする（「開けません」と出ます）
+             2. \`システム設定\` → \`プライバシーとセキュリティ\` を開く
+             3. 下の方に出ている「"pimu-note"は開発元を確認できないため…」の横の
+                **「このまま開く」** をクリックする
+             4. もう一度ダブルクリックすると起動します
+
+          2 回目以降はふつうに起動できます。
+
+          > このアプリは Apple Developer Program の署名を付けていないため、
+          > 上の手順が必要になります。中身は社内で作ったもので、
+          > 下のチェックサムでダウンロードしたファイルを検証できます。
+
+          ## 動作環境
+
+          - macOS 14 (Sonoma) 以降
+          - Apple Silicon (M1 以降) 専用
+
+          ## チェックサム (SHA-256)
+
+          \`\`\`
+          ${{ steps.checksum.outputs.sha256 }}  ${{ steps.checksum.outputs.name }}
+          \`\`\`
+
+          検証するには、ダウンロードしたファイルがあるフォルダで:
+
+          \`\`\`
+          shasum -a 256 ${{ steps.checksum.outputs.name }}
+          \`\`\`
+          EOF
+
+      - name: Releases に添付
+        # D-101: private リポジトリの Releases から配布する
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="build-$(date +%Y%m%d-%H%M%S)"
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md --prerelease
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md
+          fi
+          gh release upload "$TAG" "${{ steps.checksum.outputs.dmg }}"

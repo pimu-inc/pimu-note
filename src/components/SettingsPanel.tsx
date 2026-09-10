@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import ShortcutRecorder from './ShortcutRecorder'
 import { formatAccelerator } from '../lib/accelerator'
 import type { CopyMode, ThemePreference } from '../lib/settings'
@@ -39,8 +40,8 @@ export default function SettingsPanel({
       >
         <header className="settings-header">
           <h2>設定</h2>
-          <button className="ghost" onClick={onClose}>
-            閉じる
+          <button className="icon-button" onClick={onClose} title="閉じる" aria-label="閉じる">
+            <X size={17} />
           </button>
         </header>
 
@@ -132,6 +133,8 @@ export default function SettingsPanel({
             <dd>どこからでも pimu-note を呼び出す</dd>
             <dt>⌘N</dt>
             <dd>新規ノート</dd>
+            <dt>⌘0</dt>
+            <dd>ノート一覧の表示 / 非表示</dd>
             <dt>⌘C</dt>
             <dd>コピー（上の設定に従う）</dd>
             <dt>⌘⇧C</dt>

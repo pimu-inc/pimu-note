@@ -26,9 +26,10 @@ export default defineConfig({
   },
 
   build: {
-    // Apple Silicon 専用（要件 2.1）
-    target: 'safari15',
-    minify: 'esbuild',
+    // 配布先は macOS 14 以降の Safari/WebKit なので、古い環境向けの変換は不要
+    target: 'safari17',
+    // minify は Vite 8 の既定（oxc）に任せる。
+    // 'esbuild' を明示すると、別パッケージになった esbuild を要求されて失敗する
     sourcemap: false,
   },
 })

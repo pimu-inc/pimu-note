@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { writeHtml, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
+import { FileDown, PanelLeftClose, PanelLeftOpen, Settings, SquarePen } from 'lucide-react'
 import { confirm, open, save } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
 import NoteList from './components/NoteList'
 import SettingsPanel from './components/SettingsPanel'
 import { useNotes } from './hooks/useNotes'
 import { useSettings } from './hooks/useSettings'
-import { markdownToSafeHtml } from './lib/clipboard'
 import { UNTITLED } from './lib/notes'
 import { DEFAULT_SHORTCUT } from './lib/settings'
 import './App.css'
@@ -26,18 +25,24 @@ export default function App() {
 
   const create = notes.create
 
-  // --- F-103: ⌘N で新規ノート ---
+  const toggleSidebar = settings.toggleSidebar
+
+  // --- ⌘N で新規ノート（F-103）、⌘0 で一覧の開閉 ---
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+      if (!(e.metaKey || e.ctrlKey)) return
+      if (e.key === 'n') {
         e.preventDefault()
         void create()
+      } else if (e.key === '0') {
+        e.preventDefault()
+        toggleSidebar()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-    // create は安定した参照なので、毎レンダーで登録し直さない
-  }, [create])
+    // どちらも安定した参照なので、毎レンダーで登録し直さない
+  }, [create, toggleSidebar])
 
   // --- F-405: `.md` のドラッグ&ドロップ取り込み ---
   const importFiles = notes.importFiles
@@ -102,54 +107,61 @@ export default function App() {
     if (typeof picked === 'string') await notes.changeDir(picked)
   }
 
-  /** ツールバーからのコピー。⌘C と違い、選択に関係なくノート全体を対象にする */
-  async function copyWholeNote() {
-    if (!notes.selected) return
-    if (settings.copyMode === 'plain') {
-      await writeText(content)
-    } else {
-      await writeHtml(markdownToSafeHtml(content), content)
-    }
-  }
-
-  async function copyWholeNotePlain() {
-    if (!notes.selected) return
-    await writeText(content)
-  }
-
   if (!notes.ready) {
     return <div className="loading">読み込み中…</div>
   }
 
   return (
-    <div className={`shell${dropActive ? ' is-drop-active' : ''}`}>
-      <NoteList
-        notes={notes.notes}
-        selectedId={notes.selectedId}
-        onSelect={notes.select}
-        onCreate={() => void notes.create()}
-        onDelete={(id) => void handleDelete(id)}
-      />
+    <div
+      className={`shell${settings.sidebarOpen ? '' : ' is-sidebar-closed'}${
+        dropActive ? ' is-drop-active' : ''
+      }`}
+    >
+      {settings.sidebarOpen ? (
+        <NoteList
+          notes={notes.notes}
+          selectedId={notes.selectedId}
+          onSelect={(id) => notes.select(id)}
+          onDelete={(id) => void handleDelete(id)}
+        />
+      ) : null}
 
       <main className="main">
         <header className="topbar" data-tauri-drag-region>
+          <button
+            className="icon-button"
+            onClick={toggleSidebar}
+            title={settings.sidebarOpen ? 'ノート一覧を隠す（⌘0）' : 'ノート一覧を出す（⌘0）'}
+            aria-label={settings.sidebarOpen ? 'ノート一覧を隠す' : 'ノート一覧を出す'}
+          >
+            {settings.sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
+          </button>
           <span className="topbar-title">{notes.selected?.title || UNTITLED}</span>
           <div className="topbar-actions">
-            <button onClick={() => void copyWholeNote()} disabled={!notes.selected}>
-              全文コピー
+            <button
+              className="icon-button"
+              onClick={() => void notes.create()}
+              title="新しいノートを作る（⌘N）"
+              aria-label="新規ノート"
+            >
+              <SquarePen size={17} />
             </button>
             <button
-              className="ghost"
-              onClick={() => void copyWholeNotePlain()}
+              className="icon-button"
+              onClick={() => void handleExport()}
               disabled={!notes.selected}
+              title="このノートを .md ファイルとして書き出す"
+              aria-label="ノートを書き出す"
             >
-              プレーンのみ
+              <FileDown size={17} />
             </button>
-            <button className="ghost" onClick={() => void handleExport()} disabled={!notes.selected}>
-              書き出す
-            </button>
-            <button className="ghost" onClick={() => setSettingsOpen(true)} title="設定">
-              設定
+            <button
+              className="icon-button"
+              onClick={() => setSettingsOpen(true)}
+              title="設定（保存先・コピーの挙動・外観・ホットキー）"
+              aria-label="設定"
+            >
+              <Settings size={17} />
             </button>
           </div>
         </header>
@@ -172,7 +184,7 @@ export default function App() {
         )}
 
         <footer className="statusbar">
-          <button className="link" onClick={() => setSettingsOpen(true)} title={notes.dir}>
+          <button className="link" onClick={() => setSettingsOpen(true)} title="クリックで保存先を変更">
             保存先: {notes.dir}
           </button>
           {notes.error ? <span className="error">{notes.error}</span> : null}

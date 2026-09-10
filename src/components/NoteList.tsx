@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import type { Note } from '../lib/notes'
 import { UNTITLED } from '../lib/notes'
 
@@ -5,7 +6,6 @@ type Props = {
   notes: Note[]
   selectedId: string | null
   onSelect: (id: string) => void
-  onCreate: () => void
   onDelete: (id: string) => void
 }
 
@@ -39,20 +39,14 @@ function preview(note: Note): string {
   return rest[0]?.slice(0, 60) ?? ''
 }
 
-export default function NoteList({ notes, selectedId, onSelect, onCreate, onDelete }: Props) {
+export default function NoteList({ notes, selectedId, onSelect, onDelete }: Props) {
   return (
     <aside className="notelist">
-      <header className="notelist-header" data-tauri-drag-region>
-        <button className="new-note" onClick={onCreate} title="新規ノート（⌘N）">
-          ＋
-        </button>
-      </header>
-
       {notes.length === 0 ? (
         <p className="notelist-empty">
           ノートがありません。
           <br />
-          ＋ で作成してください。
+上のボタン（⌘N）で作成してください。
         </p>
       ) : (
         <ul className="notelist-items">
@@ -72,11 +66,11 @@ export default function NoteList({ notes, selectedId, onSelect, onCreate, onDele
               </button>
               <button
                 className="notelist-delete"
-                title="削除"
+                title="このノートを削除"
                 onClick={() => onDelete(note.id)}
                 aria-label={`${note.title || UNTITLED} を削除`}
               >
-                ×
+                <X size={13} />
               </button>
             </li>
           ))}
