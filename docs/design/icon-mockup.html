@@ -1,0 +1,170 @@
+<title>pimu-note アイコン案</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --fg:#1d1d1f; --sub:#6e6e73; --card:#ffffff; --line:#e3e3e6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#161618; --fg:#f5f5f7; --sub:#98989d; --card:#1f1f22; --line:#2e2e32;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#161618; --fg:#f5f5f7; --sub:#98989d; --card:#1f1f22; --line:#2e2e32;
+  }
+  body{
+    background:var(--bg); color:var(--fg); margin:0; padding:40px 32px 64px;
+    font:14px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  }
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{color:var(--sub);margin:0 0 36px}
+  h2{font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--sub);
+     margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+
+  /* Big Sur squircle 近似: 角丸 22.37% */
+  .icon{
+    border-radius:22.37%;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.14), 0 6px 16px rgba(0,0,0,.10);
+    flex:none;
+  }
+  .icon span{line-height:1;display:block}
+
+  .row{display:flex;gap:28px;flex-wrap:wrap}
+  .cand{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px;flex:1 1 250px;min-width:250px;
+  }
+  .cand .top{display:flex;align-items:flex-end;gap:18px;margin-bottom:16px}
+  .name{font-weight:600;font-size:15px;margin:0 0 2px}
+  .hex{color:var(--sub);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .note{color:var(--sub);font-size:12.5px;margin:8px 0 0}
+
+  .sizes{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .sz{text-align:center}
+  .sz .cap{color:var(--sub);font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:8px}
+
+  .dock{
+    display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:20px;
+    backdrop-filter:blur(20px);
+  }
+  .dock.light{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.08)}
+  .dock.dock-dark{background:rgba(40,40,44,.78);border:1px solid rgba(255,255,255,.10)}
+  .dockwrap{display:flex;gap:24px;flex-wrap:wrap}
+  .dockcell{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .dockcell .cap{color:var(--sub);font-size:12px;margin:0 0 12px}
+  .ghost{width:52px;height:52px;border-radius:22.37%;background:linear-gradient(160deg,#c7c7cc,#9a9aa0);flex:none}
+</style>
+
+<div class="wrap">
+  <h1>pimu-note アイコン案</h1>
+  <p class="lede">🗒️ ＋ 水色背景。macOS Big Sur 以降の squircle（角丸 22.37%）で表示しています。</p>
+
+  <h2>背景色 3案</h2>
+  <div class="row">
+    <div class="cand">
+      <div class="top">
+        <div class="icon" style="width:88px;height:88px;background:#7DD3FC">
+          <span style="font-size:52px">🗒️</span>
+        </div>
+        <div>
+          <p class="name">A. ライトブルー</p>
+          <p class="hex">#7DD3FC</p>
+        </div>
+      </div>
+      <p class="note">最も明るく軽い印象。ダークな Dock では映えるが、白背景だと輪郭が弱い。</p>
+    </div>
+
+    <div class="cand">
+      <div class="top">
+        <div class="icon" style="width:88px;height:88px;background:#38BDF8">
+          <span style="font-size:52px">🗒️</span>
+        </div>
+        <div>
+          <p class="name">B. スカイブルー</p>
+          <p class="hex">#38BDF8</p>
+        </div>
+      </div>
+      <p class="note">明度・彩度のバランスが良く、ライト／ダークどちらの Dock でも identity が立つ。</p>
+    </div>
+
+    <div class="cand">
+      <div class="top">
+        <div class="icon" style="width:88px;height:88px;background:#0EA5E9">
+          <span style="font-size:52px">🗒️</span>
+        </div>
+        <div>
+          <p class="name">C. ディープブルー</p>
+          <p class="hex">#0EA5E9</p>
+        </div>
+      </div>
+      <p class="note">最も締まって見え、絵文字のコントラストが最大。ただし「水色」からはやや外れる。</p>
+    </div>
+  </div>
+
+  <h2>グラデーション版（B ベース）</h2>
+  <div class="row">
+    <div class="cand" style="flex:1 1 100%">
+      <div class="top">
+        <div class="icon" style="width:88px;height:88px;background:linear-gradient(160deg,#7DD3FC 0%,#38BDF8 100%)">
+          <span style="font-size:52px">🗒️</span>
+        </div>
+        <div class="icon" style="width:88px;height:88px;background:linear-gradient(160deg,#A5E8FF 0%,#0EA5E9 100%)">
+          <span style="font-size:52px">🗒️</span>
+        </div>
+        <div>
+          <p class="name">左：ゆるいグラデ／右：強めのグラデ</p>
+          <p class="hex">#7DD3FC → #38BDF8　／　#A5E8FF → #0EA5E9</p>
+        </div>
+      </div>
+      <p class="note">Apple 純正アプリの多くは上から下へわずかに暗くなるグラデを持つ。単色よりも馴染みやすい。</p>
+    </div>
+  </div>
+
+  <h2>実サイズでの見え方（案 B）</h2>
+  <div class="cand">
+    <div class="sizes">
+      <div class="sz">
+        <div class="icon" style="width:128px;height:128px;background:#38BDF8"><span style="font-size:76px">🗒️</span></div>
+        <div class="cap">128pt / Finder</div>
+      </div>
+      <div class="sz">
+        <div class="icon" style="width:64px;height:64px;background:#38BDF8"><span style="font-size:38px">🗒️</span></div>
+        <div class="cap">64pt / Dock</div>
+      </div>
+      <div class="sz">
+        <div class="icon" style="width:32px;height:32px;background:#38BDF8"><span style="font-size:19px">🗒️</span></div>
+        <div class="cap">32pt / リスト</div>
+      </div>
+      <div class="sz">
+        <div class="icon" style="width:16px;height:16px;background:#38BDF8"><span style="font-size:10px">🗒️</span></div>
+        <div class="cap">16pt / メニュー</div>
+      </div>
+    </div>
+    <p class="note">16pt では絵文字の細部（罫線・リングの穴）が潰れます。実制作時は小サイズ用に線を省いた簡略版を別途用意すると綺麗です。</p>
+  </div>
+
+  <h2>Dock に並べたとき</h2>
+  <div class="dockwrap">
+    <div class="dockcell">
+      <p class="cap">ライトモードの Dock</p>
+      <div class="dock light">
+        <div class="ghost"></div>
+        <div class="icon" style="width:52px;height:52px;background:#7DD3FC"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:#38BDF8"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:#0EA5E9"><span style="font-size:31px">🗒️</span></div>
+        <div class="ghost"></div>
+      </div>
+    </div>
+    <div class="dockcell">
+      <p class="cap">ダークモードの Dock</p>
+      <div class="dock dock-dark">
+        <div class="ghost"></div>
+        <div class="icon" style="width:52px;height:52px;background:#7DD3FC"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:#38BDF8"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:#0EA5E9"><span style="font-size:31px">🗒️</span></div>
+        <div class="ghost"></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,167 @@
+<title>pimu-note アイコン グラデ案</title>
+<style>
+  :root{--bg:#f5f5f7;--fg:#1d1d1f;--sub:#6e6e73;--card:#fff;--line:#e3e3e6}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#161618;--fg:#f5f5f7;--sub:#98989d;--card:#1f1f22;--line:#2e2e32}}
+  :root[data-theme="dark"]{--bg:#161618;--fg:#f5f5f7;--sub:#98989d;--card:#1f1f22;--line:#2e2e32}
+  body{background:var(--bg);color:var(--fg);margin:0;padding:40px 32px 64px;
+    font:14px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{color:var(--sub);margin:0 0 8px}
+  .base{font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);margin:0 0 36px}
+  h2{font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--sub);
+     margin:44px 0 18px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .icon{border-radius:22.37%;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.14),0 6px 16px rgba(0,0,0,.10);flex:none}
+  .icon span{line-height:1;display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;
+    display:flex;flex-direction:column;align-items:center;text-align:center}
+  .cell .name{font-weight:600;font-size:14px;margin:16px 0 4px}
+  .cell .hex{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub)}
+  .cell .note{font-size:12px;color:var(--sub);margin:10px 0 0}
+  .pick{outline:2px solid #1281C0;outline-offset:-1px}
+  .badge{display:inline-block;background:#1281C0;color:#fff;font-size:10.5px;font-weight:600;
+    letter-spacing:.04em;padding:2px 8px;border-radius:99px;margin-bottom:12px}
+  .sizes{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+  .sz{text-align:center}
+  .sz .cap{color:var(--sub);font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .dockwrap{display:flex;gap:24px;flex-wrap:wrap}
+  .dock{display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:20px}
+  .dock.light{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.08)}
+  .dock.dk{background:rgba(40,40,44,.78);border:1px solid rgba(255,255,255,.10)}
+  .ghost{width:52px;height:52px;border-radius:22.37%;
+    background:linear-gradient(160deg,#c7c7cc,#9a9aa0);flex:none}
+  .cap{color:var(--sub);font-size:12px;margin:0 0 12px}
+  .ramp{display:flex;border-radius:8px;overflow:hidden;margin:0 0 28px;border:1px solid var(--line)}
+  .ramp div{flex:1;height:44px;display:flex;align-items:flex-end;justify-content:center;
+    font:10px/1 ui-monospace,Menlo,monospace;color:#fff;padding-bottom:5px}
+</style>
+
+<div class="wrap">
+  <h1>pimu-note アイコン — グラデーションパターン</h1>
+  <p class="lede">ベースカラー <strong>#1281C0</strong> から生成した6パターン。</p>
+  <p class="base">#1281C0 = hsl(202, 83%, 41%) — 同じ色相・彩度のまま明度だけを振っています</p>
+
+  <div class="ramp">
+    <div style="background:#86CCF4;color:#0B5179">86CCF4</div>
+    <div style="background:#60BCF0;color:#0B5179">60BCF0</div>
+    <div style="background:#3BACED;color:#0B5179">3BACED</div>
+    <div style="background:#169DE9">169DE9</div>
+    <div style="background:#148DD2">148DD2</div>
+    <div style="background:#1281C0">1281C0</div>
+    <div style="background:#1071A8">1071A8</div>
+    <div style="background:#0E6191">0E6191</div>
+    <div style="background:#0B5179">0B5179</div>
+  </div>
+
+  <h2>6パターン</h2>
+  <div class="grid">
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;background:#1281C0">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">0. 単色（基準）</p>
+      <p class="hex">#1281C0</p>
+      <p class="note">グラデなし。フラットで潔いが、他アプリと並ぶとやや平坦。</p>
+    </div>
+
+    <div class="cell pick">
+      <span class="badge">推奨</span>
+      <div class="icon" style="width:104px;height:104px;background:linear-gradient(180deg,#148DD2 0%,#1281C0 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">1. 微グラデ（Apple風）</p>
+      <p class="hex">#148DD2 → #1281C0</p>
+      <p class="note">明度差わずか4%。言われないと気づかないが立体感が出る。純正アプリの作法。</p>
+    </div>
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;background:linear-gradient(180deg,#169DE9 0%,#1281C0 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">2. 標準グラデ（縦）</p>
+      <p class="hex">#169DE9 → #1281C0</p>
+      <p class="note">はっきり分かる程度の明度差。指定色が下端に来るので印象は #1281C0 のまま。</p>
+    </div>
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;background:linear-gradient(180deg,#3BACED 0%,#1071A8 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">3. 中心が指定色</p>
+      <p class="hex">#3BACED → #1071A8</p>
+      <p class="note">#1281C0 が上下の中間にくる配分。最も奥行きが出るが、全体は明るめに見える。</p>
+    </div>
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;background:linear-gradient(160deg,#3BACED 0%,#0E6191 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">4. 対角グラデ</p>
+      <p class="hex">160° / #3BACED → #0E6191</p>
+      <p class="note">左上から光が当たった見え方。動きが出るが主張は強い。</p>
+    </div>
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;background:linear-gradient(180deg,#1281C0 0%,#0B5179 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">5. 下に沈むグラデ</p>
+      <p class="hex">#1281C0 → #0B5179</p>
+      <p class="note">上端が指定色。最も落ち着き、絵文字の白が際立つ。やや重い。</p>
+    </div>
+
+    <div class="cell">
+      <div class="icon" style="width:104px;height:104px;
+        background:radial-gradient(120% 90% at 50% -10%, #4FB4EF 0%, #1281C0 55%, #0F6FA5 100%)">
+        <span style="font-size:62px">🗒️</span></div>
+      <p class="name">6. 上部ハイライト</p>
+      <p class="hex">radial / #4FB4EF → #1281C0 → #0F6FA5</p>
+      <p class="note">上に光源を置いた球面的な陰影。macOS Sonoma 以降の質感に近い。</p>
+    </div>
+
+  </div>
+
+  <h2>Dock で見比べる</h2>
+  <div class="dockwrap">
+    <div class="card">
+      <p class="cap">ライトモード（左から 0→6）</p>
+      <div class="dock light">
+        <div class="ghost"></div>
+        <div class="icon" style="width:52px;height:52px;background:#1281C0"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#169DE9,#1281C0)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#3BACED,#1071A8)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(160deg,#3BACED,#0E6191)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#1281C0,#0B5179)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:radial-gradient(120% 90% at 50% -10%,#4FB4EF,#1281C0 55%,#0F6FA5)"><span style="font-size:31px">🗒️</span></div>
+        <div class="ghost"></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="cap">ダークモード（左から 0→6）</p>
+      <div class="dock dk">
+        <div class="ghost"></div>
+        <div class="icon" style="width:52px;height:52px;background:#1281C0"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#169DE9,#1281C0)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#3BACED,#1071A8)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(160deg,#3BACED,#0E6191)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:linear-gradient(180deg,#1281C0,#0B5179)"><span style="font-size:31px">🗒️</span></div>
+        <div class="icon" style="width:52px;height:52px;background:radial-gradient(120% 90% at 50% -10%,#4FB4EF,#1281C0 55%,#0F6FA5)"><span style="font-size:31px">🗒️</span></div>
+        <div class="ghost"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>実サイズ（案1・微グラデ）</h2>
+  <div class="card">
+    <div class="sizes">
+      <div class="sz"><div class="icon" style="width:128px;height:128px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:76px">🗒️</span></div><div class="cap">128pt / Finder</div></div>
+      <div class="sz"><div class="icon" style="width:64px;height:64px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:38px">🗒️</span></div><div class="cap">64pt / Dock</div></div>
+      <div class="sz"><div class="icon" style="width:32px;height:32px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:19px">🗒️</span></div><div class="cap">32pt / リスト</div></div>
+      <div class="sz"><div class="icon" style="width:16px;height:16px;background:linear-gradient(180deg,#148DD2,#1281C0)"><span style="font-size:10px">🗒️</span></div><div class="cap">16pt / メニュー</div></div>
+    </div>
+    <p class="note" style="color:var(--sub);font-size:12.5px;margin-top:16px">
+      #1281C0 は前回の水色3案より暗いため、絵文字の白い部分とのコントラストが上がり、
+      小サイズでも視認性が良くなっています。</p>
+  </div>
+</div>
