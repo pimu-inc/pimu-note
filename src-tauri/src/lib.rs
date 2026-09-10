@@ -1,4 +1,18 @@
 use tauri::Manager;
+use tauri_plugin_fs::FsExt;
+
+/// 要件 F-402 / F-403。
+///
+/// Tauri のファイルシステムスコープは tauri.conf.json で静的に決まるのが基本だが、
+/// 保存先フォルダは利用者が後から変えられる必要がある。
+/// そこで、選ばれたフォルダを実行時にスコープへ追加する。
+/// 起動時にも保存済みの設定を読んでここを呼び直すこと。
+#[tauri::command]
+fn allow_notes_dir(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    app.fs_scope()
+        .allow_directory(&path, true)
+        .map_err(|e| format!("保存先フォルダを許可できませんでした: {e}"))
+}
 
 /// F-501: ホットキーを押したときのウィンドウの振る舞い。
 ///
@@ -25,7 +39,12 @@ fn toggle_main_window(window: &tauri::WebviewWindow) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_clipboard_manager::init());
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![allow_notes_dir]);
 
     #[cfg(desktop)]
     {

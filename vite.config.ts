@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -18,6 +19,11 @@ export default defineConfig({
 
   // Rust 側のエラーが流れて消えないようにする
   clearScreen: false,
+
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+  },
 
   build: {
     // Apple Silicon 専用（要件 2.1）

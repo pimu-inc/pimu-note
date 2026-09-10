@@ -35,6 +35,14 @@ function appearanceFor(isDark: boolean) {
 export default function Editor({ initialValue, noteId, onChange, viewRef }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const innerViewRef = useRef<EditorView | null>(null)
+  /**
+   * ノート切り替えによる中身の差し替え中であることを示す。
+   *
+   * 差し替えも docChanged として通知されるため、この間に onChange を呼ぶと
+   * 「新しく開いたノートの中身を、まだ切り替わりきっていない保存先へ書く」
+   * という事故につながる。差し替えは利用者の入力ではないので通知しない。
+   */
+  const swappingRef = useRef(false)
   // onChange を extension の中に閉じ込めないよう、最新の関数を ref 越しに読む
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
@@ -66,7 +74,7 @@ export default function Editor({ initialValue, noteId, onChange, viewRef }: Prop
           appearance.of(appearanceFor(isDark)),
 
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
+            if (update.docChanged && !swappingRef.current) {
               onChangeRef.current(update.state.doc.toString())
             }
           }),
@@ -102,11 +110,16 @@ export default function Editor({ initialValue, noteId, onChange, viewRef }: Prop
     const current = view.state.doc.toString()
     if (current === initialValue) return
 
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: initialValue },
-      // 切り替え時の入力は履歴に積まない
-      annotations: [],
-    })
+    swappingRef.current = true
+    try {
+      // dispatch は同期的に走るので、この間だけ通知を止めれば足りる
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: initialValue },
+        selection: { anchor: 0 },
+      })
+    } finally {
+      swappingRef.current = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId])
 

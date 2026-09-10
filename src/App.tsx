@@ -1,13 +1,16 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { readText, writeHtml, writeText } from '@tauri-apps/plugin-clipboard-manager'
+import { writeHtml, writeText } from '@tauri-apps/plugin-clipboard-manager'
+import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
+import NoteList from './components/NoteList'
+import { useNotes } from './hooks/useNotes'
+import { UNTITLED } from './lib/notes'
 import './App.css'
 
 /**
- * Phase 0 スパイク用の暫定 Markdown → HTML 変換。
- *
- * 本実装（Phase 3）では markdown-it + タグのホワイトリストに差し替える。
+ * Phase 0 で作った暫定 Markdown → HTML 変換。
+ * Phase 3 で markdown-it + タグのホワイトリストに差し替える。
  */
 function toHtmlForSpike(md: string): string {
   const escape = (s: string) =>
@@ -38,11 +41,8 @@ function toHtmlForSpike(md: string): string {
       inList = false
     }
     if (heading) {
-      const level = heading[1].length
-      out.push(`<h${level}>${inline(heading[2])}</h${level}>`)
-    } else if (line.trim() === '') {
-      // 空行は段落の区切りとしてのみ扱う
-    } else {
+      out.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`)
+    } else if (line.trim() !== '') {
       out.push(`<p>${inline(line)}</p>`)
     }
   }
@@ -51,92 +51,117 @@ function toHtmlForSpike(md: string): string {
   return out.join('\n')
 }
 
-const SAMPLE = `# pimu-note
-
-Markdown を書いて、**Markdown のまま**コピーできるメモアプリ。
-
-## 入力支援の確認
-
-- この行末で Enter を押すと次の \`- \` が自動で出る
-- 空の項目で Enter を押すと解除される
-- Tab / Shift+Tab でインデントの上げ下げ
-
-1. 番号リストも自動採番される
-2. ふたつめ
-
-- [ ] チェックボックスも継続する
-
-## ハイライトの確認
-
-**太字** と *斜体* と \`インラインコード\` と [リンク](https://example.com)。
-
-> 引用は控えめな色になる
-
-見出しも本文も**文字の大きさは同じ**まま。行の高さが揺れないことを確認する。
-`
-
 export default function App() {
-  const [md, setMd] = useState(SAMPLE)
-  const [log, setLog] = useState<string[]>([])
+  const notes = useNotes()
   const viewRef = useRef<EditorView | null>(null)
 
-  const say = (msg: string) =>
-    setLog((prev) => [`${new Date().toLocaleTimeString('ja-JP')}  ${msg}`, ...prev].slice(0, 8))
+  const content = notes.selected?.content ?? ''
+  // 保存先はレンダー時点の値をそのまま渡す。ref 経由にすると切り替え直後にずれる
+  const selectedPath = notes.selected?.path ?? ''
+
+  const create = notes.create
+
+  // --- F-103: ⌘N で新規ノート ---
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault()
+        void create()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+    // create は安定した参照なので、毎レンダーで登録し直さない
+  }, [create])
+
+  // --- F-104: 削除前に確認する ---
+  async function handleDelete(id: string) {
+    const target = notes.notes.find((n) => n.id === id)
+    if (!target) return
+
+    const ok = await confirm(`「${target.title || UNTITLED}」を削除します。元に戻せません。`, {
+      title: 'ノートの削除',
+      kind: 'warning',
+      okLabel: '削除',
+      cancelLabel: 'キャンセル',
+    })
+    if (ok) await notes.remove(id)
+  }
+
+  // --- F-402: 保存先フォルダを選び直す ---
+  async function handleChangeDir() {
+    const picked = await open({
+      directory: true,
+      multiple: false,
+      title: 'ノートの保存先フォルダを選択',
+      defaultPath: notes.dir || undefined,
+    })
+    if (typeof picked === 'string') await notes.changeDir(picked)
+  }
 
   async function copyBoth() {
-    try {
-      const html = toHtmlForSpike(md)
-      await writeHtml(html, md)
-      say(`両方コピー OK: HTML ${html.length} 文字 / Markdown ${md.length} 文字`)
-    } catch (e) {
-      say(`両方コピー 失敗: ${String(e)}`)
-    }
+    if (!notes.selected) return
+    await writeHtml(toHtmlForSpike(content), content)
   }
 
   async function copyPlainOnly() {
-    try {
-      await writeText(md)
-      say('プレーンのみコピー OK')
-    } catch (e) {
-      say(`プレーンのみ 失敗: ${String(e)}`)
-    }
+    if (!notes.selected) return
+    await writeText(content)
   }
 
-  async function inspectClipboard() {
-    try {
-      const text = await readText()
-      say(`読み出し: ${JSON.stringify(text.slice(0, 50))}${text.length > 50 ? '…' : ''}`)
-    } catch (e) {
-      say(`読み出し 失敗: ${String(e)}`)
-    }
+  if (!notes.ready) {
+    return <div className="loading">読み込み中…</div>
   }
 
   return (
     <div className="shell">
-      <div className="titlebar" data-tauri-drag-region>
-        <span className="titlebar-label">pimu-note — Phase 1</span>
-      </div>
+      <NoteList
+        notes={notes.notes}
+        selectedId={notes.selectedId}
+        onSelect={notes.select}
+        onCreate={() => void notes.create()}
+        onDelete={(id) => void handleDelete(id)}
+      />
 
-      <div className="editor-pane">
-        <Editor initialValue={SAMPLE} noteId="spike" onChange={setMd} viewRef={viewRef} />
-      </div>
+      <main className="main">
+        <header className="topbar" data-tauri-drag-region>
+          <span className="topbar-title">{notes.selected?.title || UNTITLED}</span>
+          <div className="topbar-actions">
+            <button onClick={() => void copyBoth()} disabled={!notes.selected}>
+              コピー
+            </button>
+            <button
+              className="ghost"
+              onClick={() => void copyPlainOnly()}
+              disabled={!notes.selected}
+            >
+              プレーンのみ
+            </button>
+          </div>
+        </header>
 
-      <footer className="toolbar">
-        <div className="row">
-          <button onClick={copyBoth}>両方コピー</button>
-          <button className="ghost" onClick={copyPlainOnly}>
-            プレーンのみ
+        {notes.selected ? (
+          <div className="editor-pane">
+            <Editor
+              initialValue={notes.selected.content}
+              noteId={`${notes.selected.id}#${notes.externalRevision}`}
+              onChange={(value) => notes.updateContent(value, selectedPath)}
+              viewRef={viewRef}
+            />
+          </div>
+        ) : (
+          <div className="editor-empty">
+            <p>ノートを選ぶか、⌘N で新しく作ってください。</p>
+          </div>
+        )}
+
+        <footer className="statusbar">
+          <button className="link" onClick={() => void handleChangeDir()} title={notes.dir}>
+            保存先: {notes.dir}
           </button>
-          <button className="ghost" onClick={inspectClipboard}>
-            クリップボードを読む
-          </button>
-        </div>
-        <ul className="log">
-          {log.map((l, i) => (
-            <li key={i}>{l}</li>
-          ))}
-        </ul>
-      </footer>
+          {notes.error ? <span className="error">{notes.error}</span> : null}
+        </footer>
+      </main>
     </div>
   )
 }
