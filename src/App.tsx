@@ -1,59 +1,21 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { writeHtml, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
 import NoteList from './components/NoteList'
+import SettingsPanel from './components/SettingsPanel'
 import { useNotes } from './hooks/useNotes'
+import { useSettings } from './hooks/useSettings'
+import { markdownToSafeHtml } from './lib/clipboard'
 import { UNTITLED } from './lib/notes'
 import './App.css'
 
-/**
- * Phase 0 で作った暫定 Markdown → HTML 変換。
- * Phase 3 で markdown-it + タグのホワイトリストに差し替える。
- */
-function toHtmlForSpike(md: string): string {
-  const escape = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-  const inline = (s: string) =>
-    escape(s)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.+?)`/g, '<code>$1</code>')
-
-  const out: string[] = []
-  let inList = false
-
-  for (const line of md.split('\n')) {
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
-    const item = /^[-*]\s+(.*)$/.exec(line)
-
-    if (item) {
-      if (!inList) {
-        out.push('<ul>')
-        inList = true
-      }
-      out.push(`<li>${inline(item[1])}</li>`)
-      continue
-    }
-    if (inList) {
-      out.push('</ul>')
-      inList = false
-    }
-    if (heading) {
-      out.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`)
-    } else if (line.trim() !== '') {
-      out.push(`<p>${inline(line)}</p>`)
-    }
-  }
-  if (inList) out.push('</ul>')
-
-  return out.join('\n')
-}
-
 export default function App() {
   const notes = useNotes()
+  const settings = useSettings()
   const viewRef = useRef<EditorView | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const content = notes.selected?.content ?? ''
   // 保存先はレンダー時点の値をそのまま渡す。ref 経由にすると切り替え直後にずれる
@@ -99,12 +61,17 @@ export default function App() {
     if (typeof picked === 'string') await notes.changeDir(picked)
   }
 
-  async function copyBoth() {
+  /** ツールバーからのコピー。⌘C と違い、選択に関係なくノート全体を対象にする */
+  async function copyWholeNote() {
     if (!notes.selected) return
-    await writeHtml(toHtmlForSpike(content), content)
+    if (settings.copyMode === 'plain') {
+      await writeText(content)
+    } else {
+      await writeHtml(markdownToSafeHtml(content), content)
+    }
   }
 
-  async function copyPlainOnly() {
+  async function copyWholeNotePlain() {
     if (!notes.selected) return
     await writeText(content)
   }
@@ -127,15 +94,18 @@ export default function App() {
         <header className="topbar" data-tauri-drag-region>
           <span className="topbar-title">{notes.selected?.title || UNTITLED}</span>
           <div className="topbar-actions">
-            <button onClick={() => void copyBoth()} disabled={!notes.selected}>
-              コピー
+            <button onClick={() => void copyWholeNote()} disabled={!notes.selected}>
+              全文コピー
             </button>
             <button
               className="ghost"
-              onClick={() => void copyPlainOnly()}
+              onClick={() => void copyWholeNotePlain()}
               disabled={!notes.selected}
             >
               プレーンのみ
+            </button>
+            <button className="ghost" onClick={() => setSettingsOpen(true)} title="設定">
+              設定
             </button>
           </div>
         </header>
@@ -146,6 +116,8 @@ export default function App() {
               initialValue={notes.selected.content}
               noteId={`${notes.selected.id}#${notes.externalRevision}`}
               onChange={(value) => notes.updateContent(value, selectedPath)}
+              isDark={settings.isDark}
+              getCopyMode={settings.getCopyModeNow}
               viewRef={viewRef}
             />
           </div>
@@ -156,12 +128,24 @@ export default function App() {
         )}
 
         <footer className="statusbar">
-          <button className="link" onClick={() => void handleChangeDir()} title={notes.dir}>
+          <button className="link" onClick={() => setSettingsOpen(true)} title={notes.dir}>
             保存先: {notes.dir}
           </button>
           {notes.error ? <span className="error">{notes.error}</span> : null}
         </footer>
       </main>
+
+      {settingsOpen ? (
+        <SettingsPanel
+          dir={notes.dir}
+          onChangeDir={() => void handleChangeDir()}
+          copyMode={settings.copyMode}
+          onChangeCopyMode={settings.setCopyMode}
+          theme={settings.theme}
+          onChangeTheme={settings.setTheme}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

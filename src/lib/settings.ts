@@ -10,6 +10,14 @@ const STORE_FILE = 'settings.json'
 
 const KEY_NOTES_DIR = 'notesDir'
 const KEY_LAST_NOTE_ID = 'lastNoteId'
+const KEY_COPY_MODE = 'copyMode'
+const KEY_THEME = 'theme'
+
+/** F-306: ⌘C で何をクリップボードに載せるか */
+export type CopyMode = 'both' | 'plain'
+
+/** F-603: 外観。system は OS の設定に追従する */
+export type ThemePreference = 'system' | 'light' | 'dark'
 
 let storePromise: Promise<Store> | null = null
 
@@ -57,4 +65,26 @@ export async function setLastNoteId(id: string | null): Promise<void> {
   } else {
     await store.set(KEY_LAST_NOTE_ID, id)
   }
+}
+
+/** F-306: 既定は「書式付きとプレーンの両方」 */
+export async function getCopyMode(): Promise<CopyMode> {
+  const store = await getStore()
+  return (await store.get<CopyMode>(KEY_COPY_MODE)) ?? 'both'
+}
+
+export async function setCopyMode(mode: CopyMode): Promise<void> {
+  const store = await getStore()
+  await store.set(KEY_COPY_MODE, mode)
+}
+
+/** F-603: 既定は OS 追従 */
+export async function getThemePreference(): Promise<ThemePreference> {
+  const store = await getStore()
+  return (await store.get<ThemePreference>(KEY_THEME)) ?? 'system'
+}
+
+export async function setThemePreference(theme: ThemePreference): Promise<void> {
+  const store = await getStore()
+  await store.set(KEY_THEME, theme)
 }

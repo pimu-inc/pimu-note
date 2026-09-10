@@ -274,3 +274,138 @@ button.link:hover {
   color: var(--danger);
   margin-left: auto;
 }
+
+/* ---------------- 設定パネル ---------------- */
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(3px);
+}
+
+.settings {
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 20px 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.24);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.settings-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-section h3 {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sub);
+  margin: 0 0 10px;
+}
+
+.settings-value {
+  margin: 0 0 10px;
+  font:
+    12px/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  word-break: break-all;
+}
+
+.settings-help {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--sub);
+}
+
+.settings-choice {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.settings-choice:hover {
+  background: var(--hover);
+}
+
+.settings-choice input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.settings-choice strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-choice em {
+  display: block;
+  margin-top: 3px;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--sub);
+}
+
+.settings-segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-segmented .is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.settings-keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.settings-keys dt {
+  font:
+    12px/1.7 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.settings-keys dd {
+  margin: 0;
+  color: var(--sub);
+  line-height: 1.7;
+}
