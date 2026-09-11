@@ -14,6 +14,7 @@ const KEY_COPY_MODE = 'copyMode'
 const KEY_THEME = 'theme'
 const KEY_SHORTCUT = 'toggleShortcut'
 const KEY_SIDEBAR_OPEN = 'sidebarOpen'
+const KEY_ALWAYS_ON_TOP = 'alwaysOnTop'
 
 /** F-306: ⌘C で何をクリップボードに載せるか */
 export type CopyMode = 'both' | 'plain'
@@ -127,4 +128,18 @@ export async function getSidebarOpen(): Promise<boolean> {
 export async function setSidebarOpen(open: boolean): Promise<void> {
   const store = await getStore()
   await store.set(KEY_SIDEBAR_OPEN, open)
+}
+
+/**
+ * ウィンドウを常に最前面に出すか。
+ * 別のアプリを見ながら書き写すときに使う。既定はオフ。
+ */
+export async function getAlwaysOnTop(): Promise<boolean> {
+  const store = await getStore()
+  return (await store.get<boolean>(KEY_ALWAYS_ON_TOP)) ?? false
+}
+
+export async function setAlwaysOnTop(on: boolean): Promise<void> {
+  const store = await getStore()
+  await store.set(KEY_ALWAYS_ON_TOP, on)
 }

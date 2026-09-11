@@ -488,3 +488,10 @@ button.link:hover {
   align-items: center;
   justify-content: center;
 }
+
+/* 押し込み状態（常に最前面がオンのとき） */
+.icon-button.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+

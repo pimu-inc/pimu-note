@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
-import { FileDown, PanelLeftClose, PanelLeftOpen, Settings, SquarePen } from 'lucide-react'
+import { FileDown, PanelLeftClose, PanelLeftOpen, Pin, PinOff, Settings, SquarePen } from 'lucide-react'
 import { confirm, open, save } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
 import NoteList from './components/NoteList'
@@ -181,6 +181,15 @@ export default function App() {
               aria-label="ノートを書き出す"
             >
               <FileDown size={17} />
+            </button>
+            <button
+              className={`icon-button${settings.alwaysOnTop ? ' is-active' : ''}`}
+              onClick={settings.toggleAlwaysOnTop}
+              title={settings.alwaysOnTop ? '常に最前面: オン（クリックで解除）' : '常に最前面: オフ（クリックで固定）'}
+              aria-label="常に最前面"
+              aria-pressed={settings.alwaysOnTop}
+            >
+              {settings.alwaysOnTop ? <Pin size={17} /> : <PinOff size={17} />}
             </button>
             <button
               className="icon-button"

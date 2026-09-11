@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import {
   DEFAULT_SHORTCUT,
+  getAlwaysOnTop,
   getCopyMode,
   getThemePreference,
   getSidebarOpen,
   getToggleShortcut,
+  setAlwaysOnTop as persistAlwaysOnTop,
   setCopyMode as persistCopyMode,
   setSidebarOpen as persistSidebarOpen,
   setThemePreference as persistTheme,
@@ -22,6 +25,7 @@ export function useSettings() {
   const [theme, setThemeState] = useState<ThemePreference>('system')
   const [shortcut, setShortcutState] = useState(DEFAULT_SHORTCUT)
   const [sidebarOpen, setSidebarOpenState] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTopState] = useState(false)
   /** F-501b: 登録に失敗した理由を画面に出すため */
   const [shortcutError, setShortcutError] = useState<string | null>(null)
   const [systemIsDark, setSystemIsDark] = useState(
@@ -39,16 +43,18 @@ export function useSettings() {
 
   useEffect(() => {
     void (async () => {
-      const [mode, pref, saved, sidebar] = await Promise.all([
+      const [mode, pref, saved, sidebar, onTop] = await Promise.all([
         getCopyMode(),
         getThemePreference(),
         getToggleShortcut(),
         getSidebarOpen(),
+        getAlwaysOnTop(),
       ])
       setCopyModeState(mode)
       setThemeState(pref)
       setShortcutState(saved)
       setSidebarOpenState(sidebar)
+      setAlwaysOnTopState(onTop)
 
       // Rust 側は既定のホットキーで起動しているので、
       // 保存されている設定が違う場合はここで登録し直す
@@ -90,6 +96,20 @@ export function useSettings() {
 
   const getCopyModeNow = useCallback(() => copyModeRef.current, [])
 
+  // 常に最前面。state をウィンドウに反映する（起動時の復元もここで効く）
+  useEffect(() => {
+    getCurrentWindow()
+      .setAlwaysOnTop(alwaysOnTop)
+      .catch((e) => console.error('[pimu-note] 最前面の設定に失敗', e))
+  }, [alwaysOnTop])
+
+  const toggleAlwaysOnTop = useCallback(() => {
+    setAlwaysOnTopState((on) => {
+      void persistAlwaysOnTop(!on)
+      return !on
+    })
+  }, [])
+
   const toggleSidebar = useCallback(() => {
     setSidebarOpenState((open) => {
       void persistSidebarOpen(!open)
@@ -122,5 +142,7 @@ export function useSettings() {
     shortcutError,
     sidebarOpen,
     toggleSidebar,
+    alwaysOnTop,
+    toggleAlwaysOnTop,
   }
 }
