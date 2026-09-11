@@ -1,15 +1,16 @@
 """
 pimu-note のアプリアイコンを生成する。要件 F-702 〜 F-704。
 
-背景は #3BACED → #1071A8 の縦グラデーション（ベースカラー #1281C0 が上下の中間）。
+背景は #60BCF0 → #169DE9 の縦グラデーション（中間が #3BACED）。
+配布後「暗く感じる」との声で一段明るくした（元は #3BACED → #1071A8）。
 形は macOS Big Sur 以降の角丸スクエア（squircle）に合わせる。
 """
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
 SIZE = 1024
-TOP = (0x3B, 0xAC, 0xED)
-BOTTOM = (0x10, 0x71, 0xA8)
+TOP = (0x60, 0xBC, 0xF0)
+BOTTOM = (0x16, 0x9D, 0xE9)
 EMOJI = "\U0001F5D2️"  # 🗒️
 FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
 EMOJI_STRIKE = 160  # Apple Color Emoji が持つ最大のビットマップサイズ
