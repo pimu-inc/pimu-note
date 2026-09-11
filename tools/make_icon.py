@@ -15,8 +15,11 @@ EMOJI = "\U0001F5D2️"  # 🗒️
 FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
 EMOJI_STRIKE = 160  # Apple Color Emoji が持つ最大のビットマップサイズ
 
-# macOS のアイコンは実寸より少し内側に描かれる（周囲に余白がある）
-CONTENT_RATIO = 0.90
+# 余白は付けず、角丸を画像いっぱいに描く。
+# macOS 26 では従来形式 (.icns) のアイコンがシステム側の「板」に縮めて置かれるため、
+# 元画像に余白があると二重に縮んで他のアプリより小さく見える。
+# （Raycast や Slack などは新形式を同梱しているので縮まない）
+CONTENT_RATIO = 1.0
 # squircle の丸み。n を上げるほど四角に近づく。Apple の形は 5 前後
 SUPERELLIPSE_N = 5.0
 
