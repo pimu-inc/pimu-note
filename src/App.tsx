@@ -6,6 +6,7 @@ import { confirm, open, save } from '@tauri-apps/plugin-dialog'
 import Editor from './components/Editor'
 import NoteList from './components/NoteList'
 import SettingsPanel from './components/SettingsPanel'
+import { buildClipboardPayload, writeClipboardPayload } from './editor/copy'
 import { useNotes } from './hooks/useNotes'
 import { useSettings } from './hooks/useSettings'
 import { UNTITLED } from './lib/notes'
@@ -43,6 +44,32 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
     // どちらも安定した参照なので、毎レンダーで登録し直さない
   }, [create, toggleSidebar])
+
+  // --- F-304: どの経路でコピーしても色を持ち込ませない ---
+  //
+  // エディタ内の ⌘C は CodeMirror 側の拡張（editor/copy.ts）が処理する。
+  // しかし編集エリアの外をクリックしてから ⌘A → ⌘C のように操作すると、
+  // copy イベントは body で起きて CodeMirror に届かず、WebKit が画面の見た目
+  // （ダークモードなら白い文字色）をそのまま HTML に焼き込んでコピーしてしまう。
+  // それを防ぐため、document の capture 段階で全部の copy を捕まえ、
+  // エディタ経由でないものは自前の色のない HTML に差し替える。
+  const getCopyModeNow = settings.getCopyModeNow
+  useEffect(() => {
+    const onCopy = (e: ClipboardEvent) => {
+      const node = e.target instanceof Node ? e.target : null
+      const el = node instanceof Element ? node : node?.parentElement ?? null
+      // エディタの中で起きたものは CodeMirror 側に任せる（state から正確に組み立てる）
+      if (el?.closest('.cm-content')) return
+
+      const text = window.getSelection()?.toString() ?? ''
+      if (!text || !e.clipboardData) return
+
+      writeClipboardPayload(e.clipboardData, buildClipboardPayload(text, getCopyModeNow()))
+      e.preventDefault()
+    }
+    document.addEventListener('copy', onCopy, true)
+    return () => document.removeEventListener('copy', onCopy, true)
+  }, [getCopyModeNow])
 
   // --- F-405: `.md` のドラッグ&ドロップ取り込み ---
   const importFiles = notes.importFiles

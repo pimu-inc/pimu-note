@@ -30,11 +30,34 @@ function plainCopyTarget(state: EditorState): string {
   return selected.length > 0 ? selected.join('\n') : state.doc.toString()
 }
 
+export type ClipboardPayload = { text: string; html: string | null }
+
 /**
- * 要件 F-301〜F-304。⌘C でプレーン Markdown と HTML の両方をクリップボードに載せる。
+ * クリップボードに載せる中身を組み立てる。
+ * 入力は加工していない Markdown ソース（F-302）。HTML は色もフォントも持たない（F-304）。
+ */
+export function buildClipboardPayload(source: string, mode: CopyMode): ClipboardPayload {
+  return { text: source, html: mode === 'both' ? markdownToSafeHtml(source) : null }
+}
+
+/**
+ * DataTransfer へ書き込む。
+ * 先に clearData しておくことで、ブラウザが見た目を焼き込んだ HTML を
+ * 残していても必ず捨てられる。
+ */
+export function writeClipboardPayload(data: DataTransfer, payload: ClipboardPayload): void {
+  data.clearData()
+  data.setData('text/plain', payload.text)
+  if (payload.html !== null) data.setData('text/html', payload.html)
+}
+
+/**
+ * 要件 F-301〜F-304。エディタ内の ⌘C。
  *
- * Tauri のクリップボード API ではなく、ブラウザの copy イベントを横取りしている。
- * こちらなら選択範囲をそのまま扱えるうえ、2 つの形式を 1 回の操作で載せられる。
+ * ブラウザの copy イベントを横取りし、エディタの state から正確な範囲を取り出す
+ * （DOM の選択範囲は画面に描画されている行しか含まないため、state を使う）。
+ * カスタムの domEventHandlers は CodeMirror 組み込みより先に走り、
+ * true を返せば組み込み処理もブラウザ既定のコピーも走らない。
  */
 export function markdownCopy(getMode: () => CopyMode) {
   return EditorView.domEventHandlers({
@@ -45,13 +68,7 @@ export function markdownCopy(getMode: () => CopyMode) {
       const text = copyTarget(view.state)
       if (!text) return false
 
-      // F-302: プレーン側は加工せず、書いた Markdown をそのまま入れる
-      data.setData('text/plain', text)
-
-      if (getMode() === 'both') {
-        data.setData('text/html', markdownToSafeHtml(text))
-      }
-
+      writeClipboardPayload(data, buildClipboardPayload(text, getMode()))
       event.preventDefault()
       return true
     },
