@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { FileDown, PanelLeftClose, PanelLeftOpen, Pin, PinOff, Settings, SquarePen } from 'lucide-react'
 import { confirm, open, save } from '@tauri-apps/plugin-dialog'
@@ -90,6 +92,32 @@ export default function App() {
       })
       if (disposed) stop()
       else unlisten = stop
+    })()
+
+    return () => {
+      disposed = true
+      unlisten?.()
+    }
+  }, [importFiles])
+
+  // --- F-407: Finder の「このアプリケーションで開く」で渡されたファイル ---
+  //
+  // 起動していない状態で開かれるとパスはこちらの準備前に届くので、
+  // Rust 側に溜めてもらったものを起動時に引き取り、以降はイベントで受け取る。
+  // 同じファイルが両方から来ることがあるので、引き取りは一度だけにする。
+  useEffect(() => {
+    let unlisten: (() => void) | null = null
+    let disposed = false
+
+    void (async () => {
+      const stop = await listen<string[]>('open-files', (e) => void importFiles(e.payload))
+      if (disposed) {
+        stop()
+        return
+      }
+      unlisten = stop
+      const pending = await invoke<string[]>('take_pending_open_files')
+      if (pending.length > 0) void importFiles(pending)
     })()
 
     return () => {

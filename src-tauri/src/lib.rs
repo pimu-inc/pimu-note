@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
@@ -13,6 +13,20 @@ const DEFAULT_SHORTCUT: &str = "CommandOrControl+Alt+N";
 /// いま登録されているホットキー。差し替えのために覚えておく。
 #[cfg(desktop)]
 struct ToggleShortcut(Mutex<Shortcut>);
+
+/// 要件 F-407。「このアプリケーションで開く」で渡されたファイル。
+///
+/// アプリが起動していない状態で開かれると、ファイルのパスはフロントエンドが
+/// 準備できるより先に届く。取りこぼさないよう一旦ここに溜め、
+/// フロントエンドが起動時に `take_pending_open_files` で引き取る。
+struct PendingOpens(Mutex<Vec<String>>);
+
+const OPEN_FILES_EVENT: &str = "open-files";
+
+#[tauri::command]
+fn take_pending_open_files(state: tauri::State<'_, PendingOpens>) -> Vec<String> {
+    std::mem::take(&mut *state.0.lock().unwrap())
+}
 
 /// 要件 F-402 / F-403。
 ///
@@ -161,7 +175,8 @@ pub fn run() {
                 allow_notes_dir,
                 set_toggle_shortcut,
                 read_markdown_file,
-                write_markdown_file
+                write_markdown_file,
+                take_pending_open_files
             ]);
     }
 
@@ -170,11 +185,13 @@ pub fn run() {
         builder = builder.invoke_handler(tauri::generate_handler![
             allow_notes_dir,
             read_markdown_file,
-            write_markdown_file
+            write_markdown_file,
+            take_pending_open_files
         ]);
     }
 
     let app = builder
+        .manage(PendingOpens(Mutex::new(Vec::new())))
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -197,6 +214,28 @@ pub fn run() {
         .expect("アプリを初期化できませんでした");
 
     app.run(|app_handle, event| {
+        // F-407: Finder で .md を「このアプリケーションで開く」したときに届く。
+        // 起動済みなら即座にフロントエンドへ渡し、同時に溜めておく
+        // （起動直後でフロントエンドがまだ聞いていない場合の取りこぼし防止）。
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Opened { urls } = &event {
+            let paths: Vec<String> = urls
+                .iter()
+                .filter_map(|u| u.to_file_path().ok())
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
+            if !paths.is_empty() {
+                if let Some(state) = app_handle.try_state::<PendingOpens>() {
+                    state.0.lock().unwrap().extend(paths.clone());
+                }
+                let _ = app_handle.emit(OPEN_FILES_EVENT, paths);
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        }
+
         // macOS で Dock アイコンをクリックしたときに届く。
         // F-503 で閉じるボタンをウィンドウの非表示に変えているため、
         // ここを処理しないと一度閉じたあとアイコンから戻れなくなる。
