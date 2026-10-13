@@ -15,13 +15,29 @@ Markdown のソースをそのまま貼りたい場面で使えません。pimu-
 
 ## 使う人向け
 
-### インストール
+### インストール（Homebrew）
+
+```bash
+brew tap pimu-inc/pimu-note https://github.com/pimu-inc/pimu-note
+brew install --cask pimu-inc/pimu-note/pimu-note
+```
+
+更新は `brew upgrade --cask pimu-note` で入ります。
+Homebrew で入れた場合は、下の「初回起動の手順」は不要です。
+
+- `pimu-inc/pimu-note/pimu-note` と tap 名つきで指定してください。
+  Homebrew は公式以外の Cask を信頼済みのものしか読み込まず、
+  tap 名つきで指定したときに信頼済みとして登録されます
+- dmg で入れたものが「アプリケーション」フォルダに残っていると、インストールが止まります。
+  先にそれを削除してください（ノートは `~/Documents/pimu-note/` にあるので消えません）
+
+### インストール（dmg）
 
 1. [Releases](../../releases) から最新の `.dmg` をダウンロードする
 2. dmg を開き、pimu-note を「アプリケーション」フォルダにドラッグする
 3. **初回だけ** Gatekeeper に止められます（下記）
 
-### 初回起動の手順
+### 初回起動の手順（dmg で入れた場合）
 
 このアプリは Apple Developer Program の署名を付けていないため、
 初回だけ macOS に止められます。**1 回やれば以降は普通に起動できます。**
@@ -120,6 +136,11 @@ docs/            要件定義とデザイン
 git tag v0.1.0
 git push origin v0.1.0
 ```
+
+あわせて `Casks/pimu-note.rb` の version と sha256 を書き換えたコミットを
+CI が main に積みます。`brew upgrade` で新しい版が入るのはこのコミットのあとです。
+手元の main はこのコミットの分だけ遅れるので、次に push する前に `git pull` してください。
+Cask の version と sha256 は手で編集しないでください。
 
 手元でビルドしたものは配布しません。出所がはっきりしないバイナリを
 社内に配らないためです。
