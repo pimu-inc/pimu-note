@@ -9,6 +9,7 @@ import {
   listNotes,
   saveNote,
   type Note,
+  type NoteCache,
 } from '../lib/notes'
 import { getLastNoteId, getNotesDir, setLastNoteId, setNotesDir } from '../lib/settings'
 
@@ -58,6 +59,26 @@ export function useNotes() {
    */
   const dirtyPaths = useRef(new Set<string>())
 
+  /**
+   * 手元での変更に振る通し番号と、パスごとの「最後に触った番号」。
+   *
+   * 一覧の読み直しは非同期で、ノートが多いと数百 ms かかる。その間に
+   * 「打つ → 保存完了」まで進むと、読み直しが持ち帰るのは保存前の古い内容なのに、
+   * 突き合わせの時点では未保存フラグが下りている。未保存フラグだけで守っていると
+   * これを外部からの変更と誤認し、エディタを古い内容で作り直してしまう。
+   * 読み直しを始めた時点の番号を控えておき、それより後に触ったノートについては
+   * 読み直し結果を捨てる。
+   */
+  const localSeq = useRef(0)
+  const touchedAt = useRef(new Map<string, number>())
+  const touch = useCallback((path: string) => {
+    localSeq.current += 1
+    touchedAt.current.set(path, localSeq.current)
+  }, [])
+
+  /** 変わっていないファイルを読み直さないためのキャッシュ */
+  const listCache = useRef<NoteCache>(new Map())
+
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingSave = useRef<{ path: string; content: string } | null>(null)
 
@@ -80,22 +101,24 @@ export function useNotes() {
     try {
       await saveNote(job.path, job.content)
       lastKnownDisk.current.set(job.path, job.content)
+      touch(job.path)
       // 保存中にさらに打たれていなければ、未保存フラグを下ろす
       if (!pendingSave.current) dirtyPaths.current.delete(job.path)
     } catch (e) {
       // 保存できなかったものは未保存のままにしておく
       setError(e)
     }
-  }, [setError])
+  }, [setError, touch])
 
   const scheduleSave = useCallback(
     (path: string, content: string) => {
+      touch(path)
       dirtyPaths.current.add(path)
       pendingSave.current = { path, content }
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(() => void flushSave(), SAVE_DEBOUNCE_MS)
     },
-    [flushSave],
+    [flushSave, touch],
   )
 
   const flushNow = useCallback(async () => {
@@ -112,7 +135,7 @@ export function useNotes() {
    * 原則は「編集中のノートについてはエディタ側が正」。
    * 未保存の変更があるノートはディスクの内容で置き換えず、手元の内容を残す。
    */
-  const reconcile = useCallback((diskNotes: Note[], fromWatcher: boolean) => {
+  const reconcile = useCallback((diskNotes: Note[], fromWatcher: boolean, startedAt: number) => {
     setState((s) => {
       const inMemory = new Map(s.notes.map((n) => [n.id, n]))
       let externalRevision = s.externalRevision
@@ -122,6 +145,11 @@ export function useNotes() {
 
         if (dirtyPaths.current.has(disk.path) && mine) {
           // 保存待ちの変更がある。ディスクの内容は古いので採用しない
+          return mine
+        }
+
+        if ((touchedAt.current.get(disk.path) ?? 0) > startedAt && mine) {
+          // 読み直しを始めた後に手元で編集・保存した。持ち帰った内容はそれより古い
           return mine
         }
 
@@ -157,8 +185,11 @@ export function useNotes() {
       const dir = dirRef.current
       if (!dir) return
       try {
-        const diskNotes = await listNotes(dir)
-        reconcile(diskNotes, opts?.fromWatcher ?? false)
+        const startedAt = localSeq.current
+        const diskNotes = await listNotes(dir, listCache.current)
+        // 読んでいる間に保存先が切り替わっていたら、この結果は別のフォルダのもの
+        if (dirRef.current !== dir) return
+        reconcile(diskNotes, opts?.fromWatcher ?? false, startedAt)
       } catch (e) {
         setError(e)
       }
@@ -175,7 +206,7 @@ export function useNotes() {
         const dir = await getNotesDir()
         dirRef.current = dir
 
-        const notes = await listNotes(dir)
+        const notes = await listNotes(dir, listCache.current)
         for (const n of notes) lastKnownDisk.current.set(n.path, n.content)
 
         const lastId = await getLastNoteId()
@@ -392,7 +423,9 @@ export function useNotes() {
         lastKnownDisk.current.clear()
         dirtyPaths.current.clear()
 
-        const notes = await listNotes(dir)
+        listCache.current.clear()
+        touchedAt.current.clear()
+        const notes = await listNotes(dir, listCache.current)
         for (const n of notes) lastKnownDisk.current.set(n.path, n.content)
 
         const selectedId = notes[0]?.id ?? null

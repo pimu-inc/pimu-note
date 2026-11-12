@@ -18,6 +18,14 @@ const DIR = '/notes'
 
 /** メモリ上の疑似ファイルシステム */
 const files = new Map<string, string>()
+/** 書き込みのたびに進む更新日時。listNotes のキャッシュ判定に使われる */
+const mtimes = new Map<string, number>()
+let tick = 0
+const rawSet = files.set.bind(files)
+files.set = (key: string, value: string) => {
+  mtimes.set(key, ++tick)
+  return rawSet(key, value)
+}
 /** watch() に渡されたコールバック。テストから任意のタイミングで発火させる */
 let watchCallback: (() => void) | null = null
 
@@ -59,7 +67,10 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   remove: async (path: string) => {
     files.delete(path)
   },
-  stat: async () => ({ mtime: new Date(0) }),
+  stat: async (path: string) => ({
+    mtime: new Date(mtimes.get(path) ?? 0),
+    size: files.get(path)?.length ?? 0,
+  }),
   watch: async (_path: string, cb: () => void) => {
     watchCallback = cb
     return () => {

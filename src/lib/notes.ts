@@ -75,31 +75,59 @@ export async function ensureDir(dir: string): Promise<void> {
   }
 }
 
-/** F-105: 保存先のノートを読み込み、更新日時の降順で返す */
-export async function listNotes(dir: string): Promise<Note[]> {
+/** 前回読んだときの更新日時・サイズと中身。変わっていなければ読み直しを省く */
+export type NoteCache = Map<string, { mtime: number; size: number; note: Note }>
+
+/**
+ * F-105: 保存先のノートを読み込み、更新日時の降順で返す。
+ *
+ * `cache` を渡すと、更新日時とサイズが前回と同じファイルは中身を読み直さない。
+ * ファイル監視は自分の保存でも発火するので、毎回全件を読むとノートが増えるほど
+ * 読み直しが長引き、その間に次の保存と交差する機会が増える。
+ */
+export async function listNotes(dir: string, cache?: NoteCache): Promise<Note[]> {
   await ensureDir(dir)
 
   const entries = await readDir(dir)
   const notes: Note[] = []
+  const seen = new Set<string>()
 
   for (const entry of entries) {
     if (!entry.isFile || !entry.name.endsWith(EXT)) continue
 
     const path = await join(dir, entry.name)
+    seen.add(path)
     try {
-      const [content, info] = await Promise.all([readTextFile(path), stat(path)])
-      notes.push({
+      // 先に stat を取る。読んだ後に取ると、その間の書き込みを
+      // 「新しい更新日時 + 古い中身」の組で覚えてしまい、以後ずっと読み直されない
+      const info = await stat(path)
+      const mtime = info.mtime?.getTime() ?? 0
+      const size = info.size ?? -1
+
+      const hit = cache?.get(path)
+      if (hit && hit.mtime === mtime && hit.size === size) {
+        notes.push(hit.note)
+        continue
+      }
+
+      const content = await readTextFile(path)
+      const note: Note = {
         id: entry.name,
         path,
         content,
         title: deriveTitle(content),
-        updatedAt: info.mtime?.getTime() ?? 0,
-      })
+        updatedAt: mtime,
+      }
+      cache?.set(path, { mtime, size, note })
+      notes.push(note)
     } catch {
       // 読めないファイルは一覧から黙って外す。
       // 同期中の一時ファイルなどが混ざることがあるため、ここで落とさない。
     }
   }
+
+  // 消えたファイルのぶんはキャッシュからも落とす
+  if (cache) for (const key of [...cache.keys()]) if (!seen.has(key)) cache.delete(key)
 
   return notes.sort((a, b) => b.updatedAt - a.updatedAt)
 }

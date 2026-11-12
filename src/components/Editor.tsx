@@ -118,22 +118,46 @@ export default function Editor({
   }, [isDark])
 
   // --- ノートを切り替えたら中身を丸ごと入れ替える ---
+  //
+  // noteId は「ノートの id#外部変更の世代」。id が同じで世代だけ進んだ場合は
+  // 同じノートが外から書き換えられたということなので、カーソルを先頭に戻さず
+  // 元の位置に留める（書いている最中に先頭へ飛ばされると、続きがそこに入ってしまう）。
+  const initialValueRef = useRef(initialValue)
+  initialValueRef.current = initialValue
+  const prevNoteIdRef = useRef(noteId)
+
   useEffect(() => {
     const view = innerViewRef.current
     if (!view) return
-    const current = view.state.doc.toString()
-    if (current === initialValue) return
 
-    swappingRef.current = true
-    try {
-      // dispatch は同期的に走るので、この間だけ通知を止めれば足りる
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: initialValue },
-        selection: { anchor: 0 },
-      })
-    } finally {
-      swappingRef.current = false
+    const sameNote = prevNoteIdRef.current.split('#')[0] === noteId.split('#')[0]
+    prevNoteIdRef.current = noteId
+
+    const apply = () => {
+      const next = initialValueRef.current
+      if (view.state.doc.toString() === next) return
+
+      const keep = Math.min(view.state.selection.main.head, next.length)
+      swappingRef.current = true
+      try {
+        // dispatch は同期的に走るので、この間だけ通知を止めれば足りる
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: next },
+          selection: { anchor: sameNote ? keep : 0 },
+        })
+      } finally {
+        swappingRef.current = false
+      }
     }
+
+    // 日本語変換の途中で中身を差し替えると、変換が壊れて文字が欠けたり
+    // 空白が紛れ込んだりする。変換が確定するまで待つ
+    if (view.composing) {
+      const dom = view.contentDOM
+      dom.addEventListener('compositionend', apply, { once: true })
+      return () => dom.removeEventListener('compositionend', apply)
+    }
+    apply()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId])
 
