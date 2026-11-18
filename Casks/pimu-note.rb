@@ -1,7 +1,7 @@
 # version と sha256 はリリースの CI（.github/workflows/release.yml）が書き換える。手で編集しない。
 cask "pimu-note" do
-  version "0.1.2"
-  sha256 "7ef901174d2437315a2b272ddd495dd45a2fa8ce24aa638090d87dc2556d84af"
+  version "0.1.4"
+  sha256 "1667a0e201483086af543137a68915ba0aca547fa15276dc09b7d921ca93f8d9"
 
   url "https://github.com/pimu-inc/pimu-note/releases/download/v#{version}/pimu-note_#{version}_aarch64.dmg"
   name "pimu-note"
