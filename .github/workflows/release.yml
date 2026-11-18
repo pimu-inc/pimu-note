@@ -13,7 +13,9 @@ permissions:
 jobs:
   build:
     # Apple Silicon 専用（要件 2.1）。macos-14 以降は arm64 ランナー
-    runs-on: macos-14
+    # macos-14 のランナーは提供が終わった。動作対象は tauri.conf.json の
+    # minimumSystemVersion で決まるので、macOS 14 以降のまま変わらない
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v4
