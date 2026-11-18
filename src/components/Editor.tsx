@@ -12,6 +12,7 @@ import {
   lightHighlightStyle,
   lightTheme,
 } from '../editor/highlight'
+import { listKeyBindings } from '../editor/listEnter'
 import { pimuKeyBindings } from '../editor/shortcuts'
 
 type Props = {
@@ -78,12 +79,12 @@ export default function Editor({
           EditorView.lineWrapping,
 
           // 自前のキーバインドを先に置いて、既定より優先させる（Tab の取り合いを避ける）
-          keymap.of([plainOnlyCopyBinding(), ...pimuKeyBindings]),
+          // Enter でのリスト継続は既定のものを差し替えている（listEnter.ts 参照）
+          keymap.of([plainOnlyCopyBinding(), ...pimuKeyBindings, ...listKeyBindings]),
           markdownCopy(() => getCopyModeRef.current()),
           keymap.of([...historyKeymap, ...defaultKeymap]),
 
-          // markdown() が markdownKeymap（Enter でのリスト継続など）も入れてくれる
-          markdown({ base: markdownLanguage }),
+          markdown({ base: markdownLanguage, addKeymap: false }),
 
           baseTheme,
           appearance.of(appearanceFor(isDarkRef.current)),
