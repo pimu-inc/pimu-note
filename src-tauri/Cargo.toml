@@ -1,6 +1,6 @@
 [package]
 name = "pimu-note"
-version = "0.1.4"
+version = "0.1.5"
 description = "Markdown で書いて、Markdown のままコピーできるメモアプリ"
 authors = ["株式会社Pimu"]
 license = ""

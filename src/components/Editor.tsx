@@ -14,6 +14,7 @@ import {
 } from '../editor/highlight'
 import { listKeyBindings } from '../editor/listEnter'
 import { pimuKeyBindings } from '../editor/shortcuts'
+import { taskToggle } from '../editor/taskToggle'
 
 type Props = {
   /** 初期値。以降の更新は CodeMirror 側が持つので、ノートを切り替えたときだけ変える */
@@ -85,6 +86,7 @@ export default function Editor({
           keymap.of([...historyKeymap, ...defaultKeymap]),
 
           markdown({ base: markdownLanguage, addKeymap: false }),
+          taskToggle,
 
           baseTheme,
           appearance.of(appearanceFor(isDarkRef.current)),
